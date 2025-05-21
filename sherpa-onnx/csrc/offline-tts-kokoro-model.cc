@@ -55,7 +55,7 @@ class OfflineTtsKokoroModel::Impl {
     return meta_data_;
   }
 
-  Ort::Value Run(Ort::Value x, int32_t sid, float speed) {
+  std::pair<Ort::Value, Ort::Value> Run(Ort::Value x, int32_t sid, float speed) {
     auto memory_info =
         Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeDefault);
 
@@ -98,7 +98,7 @@ class OfflineTtsKokoroModel::Impl {
         sess_->Run({}, input_names_ptr_.data(), inputs.data(), inputs.size(),
                    output_names_ptr_.data(), output_names_ptr_.size());
 
-    return std::move(out[0]);
+    return std::make_pair(std::move(out[0]), std::move(out[1]));
   }
 
  private:
@@ -239,8 +239,7 @@ const OfflineTtsKokoroModelMetaData &OfflineTtsKokoroModel::GetMetaData()
   return impl_->GetMetaData();
 }
 
-Ort::Value OfflineTtsKokoroModel::Run(Ort::Value x, int64_t sid /*= 0*/,
-                                      float speed /*= 1.0*/) const {
+std::pair<Ort::Value, Ort::Value> OfflineTtsKokoroModel::Run(Ort::Value x, int64_t sid, float speed) const {
   return impl_->Run(std::move(x), sid, speed);
 }
 

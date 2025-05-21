@@ -404,10 +404,14 @@ class OfflineTtsKokoroImpl : public OfflineTtsImpl {
     Ort::Value x_tensor = Ort::Value::CreateTensor(
         memory_info, x.data(), x.size(), x_shape.data(), x_shape.size());
 
-    Ort::Value audio = model_->Run(std::move(x_tensor), sid, speed);
+    std::pair<Ort::Value, Ort::Value> output = model_->Run(std::move(x_tensor), sid, speed);
+    auto audio = std::move(output.first);
+    auto durations = std::move(output.second);
 
     std::vector<int64_t> audio_shape =
         audio.GetTensorTypeAndShapeInfo().GetShape();
+    std::vector<int64_t> durations_shape =
+        durations.GetTensorTypeAndShapeInfo().GetShape();
 
     int64_t total = 1;
     // The output shape may be (1, 1, total) or (1, total) or (total,)
@@ -415,11 +419,18 @@ class OfflineTtsKokoroImpl : public OfflineTtsImpl {
       total *= i;
     }
 
+    int64_t total_durations = 1;
+    for (auto i : durations_shape) {
+      total_durations *= i;
+    }
+
     const float *p = audio.GetTensorData<float>();
 
     GeneratedAudio ans;
     ans.sample_rate = model_->GetMetaData().sample_rate;
     ans.samples = std::vector<float>(p, p + total);
+    ans.tokens = std::vector<int64_t>(x.begin(), x.end());
+    ans.durations = std::vector<float>(durations.GetTensorData<float>(), durations.GetTensorData<float>() + total_durations);
 
     float silence_scale = config_.silence_scale;
     if (silence_scale != 1) {

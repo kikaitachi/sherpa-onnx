@@ -25,7 +25,7 @@ class OfflineTtsKokoroModel {
 
   // Return a float32 tensor containing the mel
   // of shape (batch_size, mel_dim, num_frames)
-  Ort::Value Run(Ort::Value x, int64_t sid = 0, float speed = 1.0) const;
+  std::pair<Ort::Value, Ort::Value> Run(Ort::Value x, int64_t sid = 0, float speed = 1.0) const;
 
   const OfflineTtsKokoroModelMetaData &GetMetaData() const;
 
